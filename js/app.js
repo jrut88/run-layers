@@ -3,11 +3,13 @@ import { searchPlaces, fetchForecast, buildRun, hhmm } from './weather.js';
 
 // ---------- settings ----------
 const KEY = 'runlayers.v1';
-const DEFAULTS = { place: null, kit: 'mens', bias: 0, runTime: '06:30', runMins: 60, tempUnit: 'C', windUnit: 'mph', mode: 'planned' };
+const DEFAULTS = { place: null, kit: 'mens', bias: 0, runTime: '06:30', runMins: 60, tempUnit: 'C', windUnit: 'mph', mode: 'now' };
 
 function loadSettings() {
-  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; }
-  catch { return { ...DEFAULTS }; }
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { /* ignore */ }
+  // Always open on "Going now"; the planned run is a per-visit switch, not a saved preference.
+  return { ...DEFAULTS, ...saved, mode: 'now' };
 }
 function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(state.s)); } catch { /* private mode: keep in memory */ }
@@ -129,7 +131,7 @@ function viewToday() {
         <a href="#profile" class="icon-btn" aria-label="Profile">${icon('user')}</a>
       </div>
       <h1>${cur && cur.run ? (state.s.mode === 'now' ? 'Running now' : `${esc(cur.run.dayLabel)}, ${esc(state.s.runTime)} run`) : 'Your run'}</h1>
-      ${seg('mode', [['planned', `Planned · ${state.s.runTime}`], ['now', 'Going now']], state.s.mode)}
+      ${seg('mode', [['now', 'Going now'], ['planned', `Planned · ${state.s.runTime}`]], state.s.mode)}
     </header>`;
 
   if (state.loading && !state.forecast) return top + `<section class="card pad skeleton" aria-busy="true"><span class="muted">Checking the forecast…</span></section>`;
