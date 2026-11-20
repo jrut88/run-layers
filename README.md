@@ -1,6 +1,6 @@
 # Run Layers
 
-What to wear for your run, from the forecast. Pick where you run and when, and Run Layers checks the temperature, wind chill, gusts and rain for your run window and builds a head-to-toe kit list.
+What to wear for your run, from the forecast. Pick where you run, then go now or plan a day and time, and Run Layers checks the temperature, wind chill, gusts and rain for your run window and builds a head-to-toe kit list.
 
 - **Feels-like with wind chill**, then about +10° for the warmth you make once moving
 - **Uses the coldest, windiest, wettest point of your run**, not just the start

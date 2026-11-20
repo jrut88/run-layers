@@ -1,5 +1,5 @@
 import { recommend, RUNNING_WARMTH_C } from './rules.js';
-import { searchPlaces, fetchForecast, buildRun, hhmm } from './weather.js';
+import { searchPlaces, fetchForecast, buildRun, upcomingDays, hhmm } from './weather.js';
 
 // ---------- settings ----------
 const KEY = 'runlayers.v1';
@@ -17,6 +17,7 @@ function saveSettings() {
 
 const state = {
   s: loadSettings(),
+  planDay: null, // YYYY-MM-DD for a planned run; null = next occurrence of the start time. Not saved.
   forecast: null,
   loading: false,
   error: '',
@@ -68,7 +69,7 @@ async function loadForecast() {
 function currentRun() {
   if (!state.forecast) return null;
   try {
-    const run = buildRun(state.forecast, { runTime: state.s.runTime, runMins: state.s.runMins, mode: state.s.mode });
+    const run = buildRun(state.forecast, { runTime: state.s.runTime, runMins: state.s.runMins, mode: state.s.mode, day: state.planDay });
     return { run, rec: recommend(run.conditions, { kit: state.s.kit, bias: state.s.bias }) };
   } catch (e) {
     return { error: e.message };
@@ -107,6 +108,23 @@ function locationBlock() {
     </form>`;
 }
 
+const LENGTHS = [[30, '30 min'], [45, '45 min'], [60, '1 hr'], [90, '1.5 hr'], [120, '2 hr']];
+
+function planPanel(cur) {
+  if (state.s.mode !== 'planned') return '';
+  const days = state.forecast ? upcomingDays(state.forecast) : [];
+  const sel = state.planDay || (cur && cur.run ? new Date(cur.run.start).toISOString().slice(0, 10) : '');
+  return `
+    <div class="card plan" aria-label="Plan your run">
+      ${days.length ? `<div class="chips" role="group" aria-label="Day">${days.map((d) => `<button type="button" class="chip" data-action="plan-day" data-v="${d.date}" aria-pressed="${d.date === sel}">${esc(d.label)}</button>`).join('')}</div>` : ''}
+      <div class="list-plain">
+        <label class="kv" for="runTime"><span>Start</span><input id="runTime" type="time" value="${esc(state.s.runTime)}" data-change="runTime"></label>
+        <label class="kv" for="runMins"><span>Length</span>
+          <select id="runMins" data-change="runMins">${LENGTHS.map(([m, l]) => `<option value="${m}" ${m === Number(state.s.runMins) ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      </div>
+    </div>`;
+}
+
 function alertCard(a) {
   return `<div class="alert">${'<span class="alert-icon">' + icon(a.kind === 'ice' ? 'alert' : 'drop', 20, 2) + '</span>'}<span><strong>${esc(a.title)}</strong> ${esc(a.body)}</span></div>`;
 }
@@ -131,8 +149,9 @@ function viewToday() {
         <a href="#profile" class="icon-btn" aria-label="Profile">${icon('user')}</a>
       </div>
       <h1>${cur && cur.run ? (state.s.mode === 'now' ? 'Running now' : `${esc(cur.run.dayLabel)}, ${esc(state.s.runTime)} run`) : 'Your run'}</h1>
-      ${seg('mode', [['now', 'Going now'], ['planned', `Planned · ${state.s.runTime}`]], state.s.mode)}
-    </header>`;
+      ${seg('mode', [['now', 'Going now'], ['planned', 'Planned']], state.s.mode)}
+    </header>
+    ${planPanel(cur)}`;
 
   if (state.loading && !state.forecast) return top + `<section class="card pad skeleton" aria-busy="true"><span class="muted">Checking the forecast…</span></section>`;
   if (state.error && !state.forecast) return top + `<section class="card pad"><p>${esc(state.error)}</p><button type="button" class="btn" data-action="refresh">Try again</button></section>`;
@@ -229,11 +248,8 @@ function viewProfile() {
       <fieldset><legend class="label">How you feel the cold</legend>
         ${seg('bias', [[-2, 'I run cold'], [0, 'Neutral'], [2, 'I run warm']], biasBucket())}
       </fieldset>
-      <div><span class="label">Your runs</span>
+      <div><span class="label">Units</span>
         <div class="card list-plain">
-          <label class="kv" for="runTime"><span>Usual run time</span><input id="runTime" type="time" value="${esc(s.runTime)}" data-change="runTime"></label>
-          <label class="kv" for="runMins"><span>Typical length</span>
-            <select id="runMins" data-change="runMins">${[30, 45, 60, 90, 120].map((m) => `<option value="${m}" ${m === Number(s.runMins) ? 'selected' : ''}>${m < 60 ? m + ' min' : m / 60 + (m === 60 ? ' hour' : ' hours')}</option>`).join('')}</select></label>
           <div class="kv"><span>Temperature</span>${seg('tempUnit', [['C', '°C'], ['F', '°F']], s.tempUnit)}</div>
           <div class="kv"><span>Wind</span>${seg('windUnit', [['mph', 'mph'], ['kmh', 'km/h']], s.windUnit)}</div>
         </div>
@@ -285,6 +301,7 @@ document.addEventListener('click', (e) => {
   const v = b.dataset.v;
   switch (b.dataset.action) {
     case 'mode': state.s.mode = v; break;
+    case 'plan-day': state.planDay = v; render(); return;
     case 'kit': state.s.kit = v; break;
     case 'bias': state.s.bias = Number(v); break;
     case 'tempUnit': state.s.tempUnit = v; break;

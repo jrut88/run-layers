@@ -27,7 +27,7 @@ export async function fetchForecast(lat, lon) {
     hourly: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability,precipitation,weather_code,is_day',
     daily: 'sunrise,sunset',
     timezone: 'auto',
-    forecast_days: '3',
+    forecast_days: '7',
     wind_speed_unit: 'kmh',
   });
   const res = await fetch(`${FORECAST_URL}?${params}`);
@@ -44,16 +44,33 @@ export const hhmm = (ms) => new Date(ms).toISOString().slice(11, 16);
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
 
+const localNow = (fc, now = Date.now()) => now + fc.utc_offset_seconds * 1000;
+
+/** The forecast's days from today onward, labelled for day chips: Today, Tomorrow, Sun, Mon… */
+export function upcomingDays(fc, now = Date.now()) {
+  const todayStr = new Date(localNow(fc, now)).toISOString().slice(0, 10);
+  return fc.daily.time
+    .filter((d) => d >= todayStr)
+    .map((date, i) => ({
+      date,
+      label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : WEEKDAYS[new Date(`${date}T12:00Z`).getUTCDay()].slice(0, 3),
+    }));
+}
+
 /**
  * Pick the run window from a forecast and summarise conditions for the rules engine.
- * mode 'planned' uses the next occurrence of runTime; 'now' starts immediately.
+ * mode 'now' starts immediately. mode 'planned' uses `day` (YYYY-MM-DD) at runTime,
+ * or, with no day, the next occurrence of runTime.
  */
-export function buildRun(fc, { runTime = '06:30', runMins = 60, mode = 'planned' } = {}) {
-  const nowLocal = Date.now() + fc.utc_offset_seconds * 1000;
+export function buildRun(fc, { runTime = '06:30', runMins = 60, mode = 'planned', day = null, now = Date.now() } = {}) {
+  const nowLocal = localNow(fc, now);
   const todayStr = new Date(nowLocal).toISOString().slice(0, 10);
   let start;
   if (mode === 'now') start = nowLocal;
-  else {
+  else if (day) {
+    start = parseLocal(`${day}T${runTime}`);
+    if (start + runMins * 60_000 < nowLocal) throw new Error('That time’s passed — pick a later time, or tap Going now.');
+  } else {
     start = parseLocal(`${todayStr}T${runTime}`);
     if (start + runMins * 60_000 < nowLocal) start += DAY;
   }

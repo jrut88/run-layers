@@ -144,6 +144,13 @@ p { margin: 0; }
 .fb button { min-height: 44px; border: 0; border-radius: 999px; background: #2A2A2A; color: #fff; font-size: 14px; font-weight: 600; }
 .fb button.light { background: #fff; color: var(--ink); }
 
+/* Plan your run */
+.plan { padding: 16px 0 4px; display: flex; flex-direction: column; gap: 4px; }
+.chips { display: flex; gap: 8px; padding: 0 16px 8px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #E3E3DF; background: var(--card); color: var(--ink); font-size: 14px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
 .skeleton { min-height: 280px; display: grid; place-items: center; }
 
 /* Tab bar */

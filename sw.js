@@ -1,5 +1,5 @@
 // Caches the app shell so it opens instantly and offline. Forecasts always go to the network.
-const CACHE = 'runlayers-v2';
+const CACHE = 'runlayers-v3';
 const SHELL = ['./', './index.html', './styles.css', './js/app.js', './js/rules.js', './js/weather.js', './icon.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
