@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "run-layers",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/Users/joe/Desktop/What to wear/serve.mjs"],
+      "port": 5173
+    }
+  ]
+}

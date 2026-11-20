@@ -1,0 +1,12 @@
+{
+  "name": "run-layers",
+  "version": "0.1.0",
+  "description": "What to wear for your run, from the forecast.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test tests/*.test.js"
+  },
+  "license": "MIT"
+}

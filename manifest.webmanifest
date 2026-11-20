@@ -1,0 +1,13 @@
+{
+  "name": "Run Layers",
+  "short_name": "Run Layers",
+  "description": "What to wear for your run, from the forecast.",
+  "start_url": "./#today",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F6F4",
+  "theme_color": "#F6F6F4",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
